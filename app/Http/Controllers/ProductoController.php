@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use App\Models\Producto;
 use App\Models\Inventario;
 
@@ -120,12 +121,22 @@ class ProductoController extends Controller
             Log::error('Error al actualizar el producto: ' . $e->getMessage());
             return response()->json(['error' => 'Error al actualizar el producto'], 500);
         }
-    }
+    }    
 
     // Método para obtener productos por categoría con cantidad total de inventario
     public function getProductosPorCategoria($idCategoria)
 {
-    try {
+    try{
+        $categorias = [
+            'televisores' => 1,
+            'telefonos' => 2,
+        ];
+
+        if (isset($categorias[$idCategoria])){
+            $idCategoria = $categorias[$idCategoria];
+        }
+    
+
         $productos = Producto::where('IdCategoria', $idCategoria)
             ->with('categoria', 'inventarios.tienda') // Relación con inventarios y tienda
             ->get();
@@ -155,7 +166,7 @@ class ProductoController extends Controller
         });
 
         return response()->json($productosConCantidadTotal, 200);
-    } catch (\Exception $e) {
+    }catch (\Exception $e) {
         Log::error('Error al obtener los productos por categoría: ' . $e->getMessage());
         return response()->json([
             'error' => 'Error al obtener los productos por categoría',
@@ -174,7 +185,7 @@ class ProductoController extends Controller
             $producto->delete();
 
             return response()->json(['mensaje' => 'Producto y su inventario eliminado con éxito'], 200);
-        } catch (\ModelNotFoundException $e) {
+        } catch (ModelNotFoundException $e) {
             return response()->json(['error' => 'Producto no encontrado'], 404);
         } catch (\Exception $e) {
             Log::error('Error al eliminar el producto: ' . $e->getMessage());
